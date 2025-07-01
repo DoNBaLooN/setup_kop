@@ -145,6 +145,8 @@ config main 'main'
 	list domain_list 'meta'
 	list domain_list 'twitter'
 	list domain_list 'tiktok'
+ 	list domain_list 'google_ai'
+	list domain_list 'cloudflare'
 
 config extra 'yt'
 	option mode 'proxy'
