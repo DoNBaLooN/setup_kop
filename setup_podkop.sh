@@ -58,9 +58,15 @@ config main 'main'
 	option detour '0'
 EOF
 
-# Compare current config to reference
-if ! cmp -s <(grep -v '^\s*#' "$PODKOP_CONF" | grep -v '^\s*$') <(grep -v '^\s*#' "$REFERENCE_CONF" | grep -v '^\s*$'); then
+# Compare current config to reference, show differences if any
+DIFF_OUTPUT=$(diff -u \
+    <(grep -v '^\s*#' "$PODKOP_CONF" | grep -v '^\s*$') \
+    <(grep -v '^\s*#' "$REFERENCE_CONF" | grep -v '^\s*$'))
+
+if [ -n "$DIFF_OUTPUT" ]; then
     echo -e "\033[0;33m⚠️  The current /etc/config/podkop file does not match the expected default configuration.\033[0m"
+    echo -e "\033[0;31m❌ Differences detected:\033[0m"
+    echo -e "\033[0;37m$DIFF_OUTPUT\033[0m"
     echo -e "\033[0;31m❌ Aborting script to prevent unintended changes.\033[0m"
     rm -f "$REFERENCE_CONF"
     exit 1
