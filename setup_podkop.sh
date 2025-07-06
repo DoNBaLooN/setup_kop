@@ -58,37 +58,27 @@ config main 'main'
 	option detour '0'
 EOF
 
-# Убираем комментарии и пустые строки
-grep -v '^\s*#' "$PODKOP_CONF" | grep -v '^\s*$' > /tmp/podkop_conf_clean
-grep -v '^\s*#' "$REFERENCE_CONF" | grep -v '^\s*$' > /tmp/podkop_ref_clean
+# Compare current config to reference, show differences if any
+DIFF_OUTPUT=$(diff -u \
+    <(grep -v '^\s*#' "$PODKOP_CONF" | grep -v '^\s*$') \
+    <(grep -v '^\s*#' "$REFERENCE_CONF" | grep -v '^\s*$'))
 
-lines_conf=$(wc -l < /tmp/podkop_conf_clean)
-lines_ref=$(wc -l < /tmp/podkop_ref_clean)
-lines_total=$(( lines_conf > lines_ref ? lines_conf : lines_ref ))
-
-different=false
-
-for i in $(seq 1 $lines_total); do
-    line1=$(sed -n "${i}p" /tmp/podkop_conf_clean)
-    line2=$(sed -n "${i}p" /tmp/podkop_ref_clean)
-
-    if [ "$line1" != "$line2" ]; then
-        different=true
-        echo -e "\033[0;31m❌ Difference at line $i:\033[0m"
-        echo -e "\033[0;33m- $line1\033[0m"
-        echo -e "\033[0;32m+ $line2\033[0m"
-    fi
-done
-
-if $different; then
+if [ -n "$DIFF_OUTPUT" ]; then
+    echo -e "\033[0;33m⚠️  The current /etc/config/podkop file does not match the expected default configuration.\033[0m"
+    echo -e "\033[0;31m❌ Differences detected:\033[0m"
+    echo -e "\033[0;37m$DIFF_OUTPUT\033[0m"
     echo -e "\033[0;31m❌ Aborting script to prevent unintended changes.\033[0m"
-    rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean
+    rm -f "$REFERENCE_CONF"
     exit 1
-else
-    echo -e "\033[0;32m✅ podkop configuration verified. Proceeding...\033[0m"
 fi
 
-rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean
+rm -f "$REFERENCE_CONF"
+echo -e "\033[0;32m✅ podkop configuration verified. Proceeding...\033[0m"
+
+# 1. Clear the existing configuration
+echo -e "\033[0;32mClearing existing configuration...\033[0m"
+> "$PODKOP_CONF"
+
 # 2. Ask the user for the VLESS link for the main connection (with validation)
 while true; do
     echo -e "\033[0;32mEnter the VLESS link for the main connection (main):\033[0m"
