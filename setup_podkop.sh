@@ -62,27 +62,33 @@ EOF
 grep -v '^\s*#' "$PODKOP_CONF" | grep -v '^\s*$' > /tmp/podkop_conf_clean
 grep -v '^\s*#' "$REFERENCE_CONF" | grep -v '^\s*$' > /tmp/podkop_ref_clean
 
-different_flag="/tmp/diff_detected"
-rm -f "$different_flag"
+lines_conf=$(wc -l < /tmp/podkop_conf_clean)
+lines_ref=$(wc -l < /tmp/podkop_ref_clean)
+lines_total=$(( lines_conf > lines_ref ? lines_conf : lines_ref ))
 
-paste /tmp/podkop_conf_clean /tmp/podkop_ref_clean | while IFS="$(printf '\t')" read -r line1 line2; do
+different=false
+
+for i in $(seq 1 $lines_total); do
+    line1=$(sed -n "${i}p" /tmp/podkop_conf_clean)
+    line2=$(sed -n "${i}p" /tmp/podkop_ref_clean)
+
     if [ "$line1" != "$line2" ]; then
-        echo -e "\033[0;31m❌ Difference detected:\033[0m"
+        different=true
+        echo -e "\033[0;31m❌ Difference at line $i:\033[0m"
         echo -e "\033[0;33m- $line1\033[0m"
         echo -e "\033[0;32m+ $line2\033[0m"
-        touch "$different_flag"
     fi
 done
 
-if [ -f "$different_flag" ]; then
+if $different; then
     echo -e "\033[0;31m❌ Aborting script to prevent unintended changes.\033[0m"
-    rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean "$different_flag"
+    rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean
     exit 1
 else
     echo -e "\033[0;32m✅ podkop configuration verified. Proceeding...\033[0m"
 fi
 
-rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean "$different_flag"
+rm -f "$REFERENCE_CONF" /tmp/podkop_conf_clean /tmp/podkop_ref_clean
 # 2. Ask the user for the VLESS link for the main connection (with validation)
 while true; do
     echo -e "\033[0;32mEnter the VLESS link for the main connection (main):\033[0m"
