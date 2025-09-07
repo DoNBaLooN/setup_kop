@@ -52,7 +52,7 @@ config main 'main'
 	list iface 'br-lan'
 	option mon_restart_ifaces '0'
 	#list restart_ifaces 'wan'
- 	option procd_reload_delay '2000'
+	option procd_reload_delay '2000'
 	option ss_uot '0'
 	option detour '0'
 EOF
